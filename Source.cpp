@@ -80,59 +80,53 @@ std::wstring get_device_path_for_filter(GUID guid)
 bool send_ioctls(std::wstring usbfilt, std::wstring lgsfilt)
 {
     HANDLE handle_usb_filter = CreateFileW(usbfilt.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
-
     if (handle_usb_filter == INVALID_HANDLE_VALUE)
     {
         std::cout << "Error in CreateFile(handle_usb_filter)\n";
         return false;
     }
-
     HANDLE handle_lgs_filter = CreateFileW(lgsfilt.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
-
     if (handle_lgs_filter == INVALID_HANDLE_VALUE)
     {
         std::cout << "Error in CreateFile(handle_lgs_filter)\n";
         return false;
     }
 
-    char cmd1[] = "\x00\x00\x00\x00\x40\x02\x0e\x00\x1a\x00\x00\x00";
-    char cmd2[] = "\x34\x08\x00\x00\x10\x00\x09\x00\x04\x00\x04\x00";
-    char cmd3[] = "\x00\x00\x00\x00\x40\x02\x0e\x00\x1a\x00\x00\x00";
-    char cmd4[] = "\x00\x00\x00\x00\x40\x02\x0b\x00\x02\x00\x00\x00";
-    char cmd5[] = "\x00\x00\x00\x00\x40\x02\x0e\x00\x12\x00\x00\x00";
-    char cmd6[] = "\x98\x08\x00\x00\xcc\x0c\x00\x00\xcc\x0c\x00\x00";
-    char cmd7[] = "\x00\x00\x00\x00\x40\x02\x0e\x00\x1a\x00\x00\x00";
-    char cmd8[] = "\x34\x08\x00\x00\x10\x00\x09\x00\x04\x00\x04\x00";
-    char cmd9[] = "\x00\x00\x00\x00\x40\x02\x0e\x00\x1a\x00\x00\x00";
-    char cmd10[] = "\x00\x00\x00\x00\x40\x02\x0b\x00\x02\x00\x00\x00";
-    char cmd11[] = "\x00\x00\x00\x00\x40\x02\x0e\x00\x12\x00\x00\x00";
-    char cmd12[] = "\x98\x08\x00\x00\xcc\x0c\x00\x00\xcc\x0c\x00\x00";
 
-    char sm1[] = "\x34\x08\x00\x00";
-    char sm2[] = "\x9a\x08\x00\x00\x00\x00\x00\x00";
-    char sm3[] = "\x34\x08\x00\x00";
-    char sm4[] = "\x9a\x08\x00\x00\x00\x00\x00\x00";
+    char usb_init_cmd[]     = "\x00\x00\x00\x00\x40\x02\x0e\x00\x1a\x00\x00\x00";
 
-    char out[8];
 
+    // Command to set the USB polling rate
+    // 0x02 == 500hz 
+    // 0x08 == 125hz
+    char usb_poll_cmd[]     = "\x00\x00\x00\x00\x40\x02\x0b\x00\x08\x00\x00\x00";
+
+    char usb_exit_cmd[]     = "\x00\x00\x00\x00\x40\x02\x0e\x00\x12\x00\x00\x00"; 
+
+
+    // Command to set the X & Y Axis DPI
+    // General command format - (0xAA 0xBB 0x00 0x00)
+    // Here (0xCC 0x0C) = 400 DPI
+    char lgs_set_dpi_cmd[]  = "\x98\x08\x00\x00\xcc\x0c\x00\x00\xcc\x0c\x00\x00";
+
+    char lgs_exit_cmd[]     = "\x9a\x08\x00\x00\x00\x00\x00\x00";
+
+    char usb_disable_dmode_cmd[] = "\xd0\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+    
+    char output_buf8[8];   
+    char output_buf16[16];
+    
     DWORD ret;
 
-    DeviceIoControl(handle_usb_filter, IOCTL_USB_DIAGNOSTIC_MODE_ON, cmd1, 12, out, 8, &ret, NULL);
-    DeviceIoControl(handle_lgs_filter, IOCTL_USB_GET_NODE_CONNECTION_NAME, sm1, 4, NULL, 0, &ret, NULL);
-    DeviceIoControl(handle_lgs_filter, IOCTL_USB_GET_NODE_CONNECTION_NAME, cmd2, 12, NULL, 0, &ret, NULL);
-    DeviceIoControl(handle_usb_filter, IOCTL_USB_DIAGNOSTIC_MODE_ON, cmd3, 12, out, 8, &ret, NULL);
-    DeviceIoControl(handle_usb_filter, IOCTL_USB_DIAGNOSTIC_MODE_ON, cmd4, 12, out, 8, &ret, NULL);
-    DeviceIoControl(handle_usb_filter, IOCTL_USB_DIAGNOSTIC_MODE_ON, cmd5, 12, out, 8, &ret, NULL);
-    DeviceIoControl(handle_lgs_filter, IOCTL_USB_GET_NODE_CONNECTION_NAME, cmd6, 12, NULL, 0, &ret, NULL);
-    DeviceIoControl(handle_lgs_filter, IOCTL_USB_GET_NODE_CONNECTION_NAME, sm2, 8, NULL, 0, &ret, NULL);
-    DeviceIoControl(handle_usb_filter, IOCTL_USB_DIAGNOSTIC_MODE_ON, cmd7, 12, out, 8, &ret, NULL);
-    DeviceIoControl(handle_lgs_filter, IOCTL_USB_GET_NODE_CONNECTION_NAME, sm3, 4, NULL, 0, &ret, NULL);
-    DeviceIoControl(handle_lgs_filter, IOCTL_USB_GET_NODE_CONNECTION_NAME, cmd8, 12, NULL, 0, &ret, NULL);
-    DeviceIoControl(handle_usb_filter, IOCTL_USB_DIAGNOSTIC_MODE_ON, cmd9, 12, out, 8, &ret, NULL);
-    DeviceIoControl(handle_usb_filter, IOCTL_USB_DIAGNOSTIC_MODE_ON, cmd10, 12, out, 8, &ret, NULL);
-    DeviceIoControl(handle_usb_filter, IOCTL_USB_DIAGNOSTIC_MODE_ON, cmd11, 12, out, 8, &ret, NULL);
-    DeviceIoControl(handle_lgs_filter, IOCTL_USB_GET_NODE_CONNECTION_NAME, cmd12, 12, NULL, 0, &ret, NULL);
-    DeviceIoControl(handle_lgs_filter, IOCTL_USB_GET_NODE_CONNECTION_NAME, sm4, 8, NULL, 0, &ret, NULL);
+
+    DeviceIoControl(handle_usb_filter, IOCTL_USB_DIAGNOSTIC_MODE_ON, usb_init_cmd, sizeof(usb_init_cmd), output_buf8, sizeof(output_buf8), &ret, NULL);                 
+    DeviceIoControl(handle_usb_filter, IOCTL_USB_DIAGNOSTIC_MODE_ON, usb_poll_cmd, sizeof(usb_poll_cmd), output_buf8, sizeof(output_buf8), &ret, NULL);
+    DeviceIoControl(handle_usb_filter, IOCTL_USB_DIAGNOSTIC_MODE_ON, usb_exit_cmd, sizeof(usb_exit_cmd), output_buf8, sizeof(output_buf8), &ret, NULL);
+
+    DeviceIoControl(handle_lgs_filter, IOCTL_USB_GET_NODE_CONNECTION_NAME, lgs_set_dpi_cmd, 12, NULL, 0, &ret, NULL);          
+    DeviceIoControl(handle_lgs_filter, IOCTL_USB_GET_NODE_CONNECTION_NAME, lgs_exit_cmd, 8, NULL, 0, &ret, NULL);            
+
+    DeviceIoControl(handle_lgs_filter, IOCTL_USB_DIAGNOSTIC_MODE_OFF, usb_disable_dmode_cmd, sizeof(usb_disable_dmode_cmd), output_buf16, sizeof(output_buf16), &ret, NULL);
 
     CloseHandle(handle_usb_filter);
     CloseHandle(handle_lgs_filter);
