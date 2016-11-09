@@ -1,3 +1,8 @@
+/*
+Quick and Dirty Hack to enable/disable Windows 10 Updates using Local GPO
+Author: Kapil Kapre
+License: Public Domain - Do whatever you want with it.
+*/
 #define INITGUID
 #include <windows.h>
 #include <iostream>
